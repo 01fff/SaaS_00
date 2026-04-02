@@ -1,12 +1,10 @@
 generator client {
-  provider        = "prisma-client-js"
-  output          = "../apps/api/src/infra/prisma/generated/tenant"
-  previewFeatures = ["multiSchema"]
+  provider = "prisma-client-js"
+  output   = "../apps/api/src/infra/prisma/generated/tenant"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
   schemas  = ["tenant_template"]
 }
 
