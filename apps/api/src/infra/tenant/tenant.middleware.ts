@@ -1,27 +1,29 @@
-import { Injectable, NestMiddleware, ForbiddenException } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
+import {
+  Injectable,
+  NestMiddleware,
+  ForbiddenException,
+} from '@nestjs/common';
+import { Request, NextFunction } from 'express';
 import { TenantService } from './tenant.service';
 
 @Injectable()
 export class TenantMiddleware implements NestMiddleware {
-  constructor(private tenantService: TenantService) {}
+  constructor(private readonly tenantService: TenantService) {}
 
-  async use(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async use(req: Request, res: any, next: NextFunction) {
     try {
-      const hostname = req.hostname;
-      
-      // Extrair slug do subdomínio
-      const parts = hostname.split('.');
-      
-      // Validar: localhost ou algo.localhost ou algo.com.br
+      const parts = req.hostname.split('.');
+
+      // Validar: precisa ter pelo menos 2 partes (ex: clinica.localhost ou clinica.example.com)
       if (parts.length < 2) {
         res.status(400).json({ error: 'Invalid hostname' });
         return;
       }
 
-      // Ignorar "www"
       let slug = parts[0];
-      if (slug === 'www' && parts.length > 1) {
+
+      // Ignorar www
+      if (slug === 'www') {
         slug = parts[1];
       }
 
@@ -36,6 +38,7 @@ export class TenantMiddleware implements NestMiddleware {
 
       // Adicionar ao contexto
       (req as any).tenant = tenant;
+      (req as any).tenantSchema = tenant.schema_name;
 
       next();
     } catch (error) {
