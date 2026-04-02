@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../apps/api/src/infra/prisma/generated/tenant"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["tenant_template"]
+}
+
+enum UserRole {
+  admin
+  recepcao
+  profissional
+  financeiro
+}
+
+enum AttendanceStatus {
+  AGENDADO
+  CONCLUIDO
+  CANCELADO
+  FALTA
+}
+
+model User {
+  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email         String    @unique
+  password_hash String
+  nome          String
+  roles         UserRole[]
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model Client {
+  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  nome        String
+  email       String?
+  telefone    String?
+  cpf         String?   @unique
+  data_nasc   DateTime?
+  endereco    String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  @@map("clients")
+}
+
+model Attendance {
+  id              String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  client_id       String           @db.Uuid
+  professional_id String           @db.Uuid
+  data_inicio     DateTime
+  data_fim        DateTime
+  status          AttendanceStatus @default(AGENDADO)
+  observacoes     String?
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt
+
+  @@map("attendances")
+}
+
+model Product {
+  id        String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  nome      String
+  validade  DateTime
+  estoque   Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("products")
+}
+
+model AuditLog {
+  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  usuario_id  String    @db.Uuid
+  acao        String
+  entidade    String
+  entidade_id String
+  created_at  DateTime  @default(now())
+
+  @@map("audit_logs")
+}

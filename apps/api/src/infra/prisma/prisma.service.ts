@@ -14,7 +14,11 @@ export class PrismaService
     await this.$disconnect();
   }
 
-  async setSchema(schema: string): Promise<void> {
-    await this.$executeRaw`SET search_path = ${schema}`;
+  async withTenant<T>(
+    schema: string,
+    fn: () => Promise<T>,
+  ): Promise<T> {
+    await this.$executeRawUnsafe(`SET search_path = "${schema}"`);
+    return fn();
   }
 }
