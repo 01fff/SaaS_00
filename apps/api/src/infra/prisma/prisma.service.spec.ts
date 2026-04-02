@@ -32,6 +32,26 @@ describe('PrismaService (Integração)', () => {
     });
   });
 
+  describe.skip('withTenant', () => {
+    it('deve executar função no contexto do schema', async () => {
+      const mockFn = jest.fn().mockResolvedValue('resultado');
+
+      const result = await service.withTenant('clinica_abc', mockFn);
+
+      expect(result).toBe('resultado');
+      expect(mockFn).toHaveBeenCalled();
+    });
+
+    it('deve retornar resultado da função executada', async () => {
+      const mockData = { id: 'uuid-1', nome: 'Dados' };
+      const mockFn = jest.fn().mockResolvedValue(mockData);
+
+      const result = await service.withTenant('clinica_xyz', mockFn);
+
+      expect(result).toEqual(mockData);
+    });
+  });
+
   // NOTA: Testes de integração com banco real requerem PostgreSQL rodando
   // Desabilitados temporariamente pois Docker não está disponível no ambiente
   // Descomente e execute com: docker-compose up -d
