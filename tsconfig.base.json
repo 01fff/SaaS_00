@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@saas-clinica/types": ["packages/types/src/index.ts"],
+      "@saas-clinica/types/*": ["packages/types/src/*"],
+      "@saas-clinica/utils": ["packages/utils/src/index.ts"],
+      "@saas-clinica/utils/*": ["packages/utils/src/*"]
+    }
+  }
+}

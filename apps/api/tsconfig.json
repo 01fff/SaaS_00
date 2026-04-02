@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "resolvePackageJsonExports": true,
+    "isolatedModules": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "@saas-clinica/types": ["../../packages/types/src/index.ts"],
+      "@saas-clinica/types/*": ["../../packages/types/src/*"],
+      "@saas-clinica/utils": ["../../packages/utils/src/index.ts"],
+      "@saas-clinica/utils/*": ["../../packages/utils/src/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
