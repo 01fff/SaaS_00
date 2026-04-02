@@ -164,3 +164,11 @@ docs:   documentação
 - Arquitetura detalhada: `docs/ARCHITECTURE.md`
 - Requisitos e regras de negócio: `docs/REQUIREMENTS.md`
 - Planejamento e etapas: `docs/PLANNING.md`
+
+## Regras de revisão e escopo
+- Para o Claude Code
+- Implemente apenas o que foi solicitado no passo atual
+- Não adicione arquivos, campos, índices, configurações ou otimizações além do escopo pedido
+- Não antecipe problemas futuros — deixe o TDD revelar o que é necessário
+- Se perceber algo que pode ser necessário no futuro, mencione como observação mas não implemente
+- Cada passo termina quando os testes do passo atual estão passando, não antes, não depois
