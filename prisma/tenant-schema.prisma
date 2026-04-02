@@ -1,0 +1,230 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../apps/api/src/infra/prisma/generated/tenant"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["tenant_template"]
+}
+
+// ─────────────────────────────────────────────────────────
+// Usuarios — perfis de acesso por clínica (RBAC)
+// ─────────────────────────────────────────────────────────
+model Usuario {
+  id           String        @id @default(uuid())
+  nome         String
+  email        String        @unique
+  senha_hash   String
+  perfil       PerfilAcesso
+  ativo        Boolean       @default(true)
+  agendamentos Agendamento[] @relation("profissional")
+  created_at   DateTime      @default(now())
+  updated_at   DateTime      @updatedAt
+
+  @@schema("tenant_template")
+}
+
+enum PerfilAcesso {
+  ADMIN
+  RECEPCAO
+  PROFISSIONAL
+  FINANCEIRO
+
+  @@schema("tenant_template")
+}
+
+// ─────────────────────────────────────────────────────────
+// Clientes — cadastro único por clínica
+// ─────────────────────────────────────────────────────────
+model Cliente {
+  id              String        @id @default(uuid())
+  nome            String
+  email           String?
+  telefone        String?
+  cpf             String?       @unique
+  data_nascimento DateTime?     @db.Date
+  observacoes     String?
+  ativo           Boolean       @default(true)
+  agendamentos    Agendamento[]
+  pacotes         Pacote[]
+  prontuarios     Prontuario[]
+  cobrancas       Cobranca[]
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+
+  @@schema("tenant_template")
+}
+
+// ─────────────────────────────────────────────────────────
+// Procedimentos — catálogo de serviços da clínica
+// ─────────────────────────────────────────────────────────
+model Procedimento {
+  id           String        @id @default(uuid())
+  nome         String
+  descricao    String?
+  duracao_min  Int
+  preco_padrao Decimal       @db.Decimal(10, 2)
+  ativo        Boolean       @default(true)
+  agendamentos Agendamento[]
+  pacotes      Pacote[]
+  created_at   DateTime      @default(now())
+  updated_at   DateTime      @updatedAt
+
+  @@schema("tenant_template")
+}
+
+// ─────────────────────────────────────────────────────────
+// Agendamentos — agenda da clínica (RN01: sem conflito)
+// Status: AGENDADO → CONCLUIDO | CANCELADO | FALTA
+// ─────────────────────────────────────────────────────────
+model Agendamento {
+  id               String            @id @default(uuid())
+  cliente_id       String
+  cliente          Cliente           @relation(fields: [cliente_id], references: [id])
+  profissional_id  String
+  profissional     Usuario           @relation("profissional", fields: [profissional_id], references: [id])
+  procedimento_id  String
+  procedimento     Procedimento      @relation(fields: [procedimento_id], references: [id])
+  pacote_sessao_id String?
+  pacote_sessao    PacoteSessao?     @relation(fields: [pacote_sessao_id], references: [id])
+  inicio           DateTime
+  fim              DateTime
+  status           AgendamentoStatus @default(AGENDADO)
+  observacoes      String?
+  created_at       DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+
+  @@index([profissional_id, inicio, fim])
+  @@schema("tenant_template")
+}
+
+enum AgendamentoStatus {
+  AGENDADO
+  CONCLUIDO
+  CANCELADO
+  FALTA
+
+  @@schema("tenant_template")
+}
+
+// ─────────────────────────────────────────────────────────
+// Pacotes — sessões contratadas (RN02: consumo ao concluir)
+// ─────────────────────────────────────────────────────────
+model Pacote {
+  id              String         @id @default(uuid())
+  cliente_id      String
+  cliente         Cliente        @relation(fields: [cliente_id], references: [id])
+  procedimento_id String
+  procedimento    Procedimento   @relation(fields: [procedimento_id], references: [id])
+  total_sessoes   Int
+  sessoes_usadas  Int            @default(0)
+  validade        DateTime       @db.Date
+  sessoes         PacoteSessao[]
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @updatedAt
+
+  @@index([cliente_id, procedimento_id])
+  @@index([validade])
+  @@schema("tenant_template")
+}
+
+model PacoteSessao {
+  id           String        @id @default(uuid())
+  pacote_id    String
+  pacote       Pacote        @relation(fields: [pacote_id], references: [id])
+  agendamentos Agendamento[]
+  created_at   DateTime      @default(now())
+
+  @@schema("tenant_template")
+}
+
+// ─────────────────────────────────────────────────────────
+// Prontuários — anamnese, evolução, fotos, termos (RF03)
+// ─────────────────────────────────────────────────────────
+model Prontuario {
+  id              String    @id @default(uuid())
+  cliente_id      String
+  cliente         Cliente   @relation(fields: [cliente_id], references: [id])
+  anamnese        String?
+  evolucao        String?
+  intercorrencias String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  @@schema("tenant_template")
+}
+
+// ─────────────────────────────────────────────────────────
+// Financeiro — cobranças e pagamentos (RF05)
+// ─────────────────────────────────────────────────────────
+model Cobranca {
+  id         String         @id @default(uuid())
+  cliente_id String
+  cliente    Cliente        @relation(fields: [cliente_id], references: [id])
+  valor      Decimal        @db.Decimal(10, 2)
+  desconto   Decimal        @db.Decimal(10, 2) @default(0)
+  status     CobrancaStatus @default(PENDENTE)
+  vencimento DateTime       @db.Date
+  pago_em    DateTime?
+  created_at DateTime       @default(now())
+  updated_at DateTime       @updatedAt
+
+  @@schema("tenant_template")
+}
+
+enum CobrancaStatus {
+  PENDENTE
+  PAGO
+  VENCIDO
+  ESTORNADO
+
+  @@schema("tenant_template")
+}
+
+// ─────────────────────────────────────────────────────────
+// Estoque — produtos, lotes e validade (RF06, RN03)
+// ─────────────────────────────────────────────────────────
+model Produto {
+  id             String   @id @default(uuid())
+  nome           String
+  unidade        String
+  estoque_minimo Int      @default(0)
+  ativo          Boolean  @default(true)
+  lotes          Lote[]
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  @@schema("tenant_template")
+}
+
+model Lote {
+  id         String   @id @default(uuid())
+  produto_id String
+  produto    Produto  @relation(fields: [produto_id], references: [id])
+  numero     String
+  quantidade Decimal  @db.Decimal(10, 3)
+  validade   DateTime @db.Date
+  created_at DateTime @default(now())
+
+  @@index([produto_id, validade])
+  @@schema("tenant_template")
+}
+
+// ─────────────────────────────────────────────────────────
+// AuditLog — rastreabilidade de ações sensíveis (RN04)
+// Placeholder para Etapa 4; model definido agora para evitar
+// refatoração no TenantService e nos módulos de negócio.
+// ─────────────────────────────────────────────────────────
+model AuditLog {
+  id          String   @id @default(uuid())
+  usuario_id  String
+  acao        String
+  entidade    String
+  entidade_id String
+  created_at  DateTime @default(now())
+
+  @@schema("tenant_template")
+}
